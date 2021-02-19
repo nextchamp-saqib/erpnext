@@ -30,6 +30,7 @@ class StockReconciliation(StockController):
 		self.validate_data()
 		self.validate_expense_account()
 		self.set_total_qty_and_amount()
+		self.validate_putaway_capacity()
 
 		if self._action=="submit":
 			self.make_batches('warehouse')
@@ -37,14 +38,16 @@ class StockReconciliation(StockController):
 	def on_submit(self):
 		self.update_stock_ledger()
 		self.make_gl_entries()
+		self.repost_future_sle_and_gle()
 
 		from erpnext.stock.doctype.serial_no.serial_no import update_serial_nos_after_submit
 		update_serial_nos_after_submit(self, "items")
 
 	def on_cancel(self):
-		self.ignore_linked_doctypes = ('GL Entry', 'Stock Ledger Entry')
+		self.ignore_linked_doctypes = ('GL Entry', 'Stock Ledger Entry', 'Repost Item Valuation')
 		self.make_sle_on_cancel()
 		self.make_gl_entries_on_cancel()
+		self.repost_future_sle_and_gle()
 
 	def remove_items_with_no_change(self):
 		"""Remove items if qty or rate is not changed"""
@@ -67,6 +70,8 @@ class StockReconciliation(StockController):
 
 				if item_dict.get("serial_nos"):
 					item.current_serial_no = item_dict.get("serial_nos")
+					if self.purpose == "Stock Reconciliation":
+						item.serial_no = item.current_serial_no
 
 				item.current_qty = item_dict.get("qty")
 				item.current_valuation_rate = item_dict.get("rate")
@@ -258,6 +263,7 @@ class StockReconciliation(StockController):
 
 			sl_entries.append(args)
 
+		qty_after_transaction = 0
 		for serial_no in serial_nos:
 			args = self.get_sle_for_items(row, [serial_no])
 
@@ -271,11 +277,19 @@ class StockReconciliation(StockController):
 			if previous_sle and row.warehouse != previous_sle.get("warehouse"):
 				# If serial no exists in different warehouse
 
+				warehouse = previous_sle.get("warehouse", '') or row.warehouse
+
+				if not qty_after_transaction:
+					qty_after_transaction = get_stock_balance(row.item_code,
+						warehouse, self.posting_date, self.posting_time)
+
+				qty_after_transaction -= 1
+
 				new_args = args.copy()
 				new_args.update({
 					'actual_qty': -1,
-					'qty_after_transaction': cint(previous_sle.get('qty_after_transaction')) - 1,
-					'warehouse': previous_sle.get("warehouse", '') or row.warehouse,
+					'qty_after_transaction': qty_after_transaction,
+					'warehouse': warehouse,
 					'valuation_rate': previous_sle.get("valuation_rate")
 				})
 

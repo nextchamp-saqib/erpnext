@@ -178,6 +178,13 @@ def create_lead_for_item_inquiry(lead, subject, message):
 	lead_doc.update(lead)
 	lead_doc.set('lead_owner', '')
 
+	if not frappe.db.exists('Lead Source', 'Product Inquiry'):
+		frappe.get_doc({
+			'doctype': 'Lead Source',
+			'source_name' : 'Product Inquiry'
+		}).insert(ignore_permissions=True)
+	lead_doc.set('source', 'Product Inquiry')
+
 	try:
 		lead_doc.save(ignore_permissions=True)
 	except frappe.exceptions.DuplicateEntryError:
@@ -343,7 +350,7 @@ def _set_price_list(cart_settings, quotation=None):
 	selling_price_list = None
 
 	# check if default customer price list exists
-	if party_name:
+	if party_name and frappe.db.exists("Customer", party_name):
 		selling_price_list = get_default_price_list(frappe.get_doc("Customer", party_name))
 
 	# check default price list in shopping cart

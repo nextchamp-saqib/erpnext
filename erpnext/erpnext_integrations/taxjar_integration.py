@@ -1,6 +1,5 @@
 import traceback
 
-import pycountry
 import taxjar
 
 import frappe
@@ -208,6 +207,7 @@ def get_shipping_address_details(doc):
 
 
 def get_iso_3166_2_state_code(address):
+	import pycountry
 	country_code = frappe.db.get_value("Country", address.get("country"), "code")
 
 	error_message = _("""{0} is not a valid state! Check for typos or enter the ISO code for your state.""").format(address.get("state"))

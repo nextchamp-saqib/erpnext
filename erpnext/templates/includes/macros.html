@@ -7,9 +7,9 @@
 </div>
 {% endmacro %}
 
-{% macro product_image(website_image, css_class="") %}
+{% macro product_image(website_image, css_class="", alt="") %}
     <div class="border text-center rounded h-100 {{ css_class }}" style="overflow: hidden;">
-		<img itemprop="image" class="website-image h-100 w-100" src="{{ frappe.utils.quoted(website_image or 'no-image.jpg') | abs_url }}">
+		<img itemprop="image" class="website-image h-100 w-100" alt="{{ alt }}" src="{{ frappe.utils.quoted(website_image or 'no-image.jpg') | abs_url }}">
     </div>
 {% endmacro %}
 
@@ -40,7 +40,7 @@
 		<div class="col-md-{{ section.column_value }} mb-4">
 			<div class="card h-100 justify-content-between">
 				{% if card.image %}
-				<div class="website-image-lazy" data-class="card-img-top h-100" data-src="{{ card.image }}" data-alt="{{ card.title }}"></div>
+				<div class="website-image-lazy" data-class="card-img-top h-75" data-src="{{ card.image }}" data-alt="{{ card.title }}"></div>
 				{% endif %}
 				<div class="card-body">
 					<h5 class="card-title">{{ card.title }}</h5>

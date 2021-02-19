@@ -84,7 +84,7 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Series",
-   "options": "LP-",
+   "options": "HLC-LAB-.YYYY.-",
    "print_hide": 1,
    "report_hide": 1,
    "reqd": 1
@@ -197,11 +197,10 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
    "options": "Draft\nCompleted\nApproved\nRejected\nCancelled",
-   "print_hide": 1,
    "read_only": 1,
-   "report_hide": 1,
    "search_index": 1
   },
   {
@@ -249,8 +248,8 @@
   {
    "fieldname": "result_date",
    "fieldtype": "Date",
-   "hidden": 1,
    "label": "Result Date",
+   "read_only": 1,
    "search_index": 1
   },
   {
@@ -354,11 +353,13 @@
   },
   {
    "fieldname": "sb_normal",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Compound Test Result"
   },
   {
    "fieldname": "normal_test_items",
    "fieldtype": "Table",
+   "label": "Normal Test Result",
    "options": "Normal Test Result",
    "print_hide": 1
   },
@@ -369,22 +370,27 @@
   {
    "depends_on": "descriptive_toggle",
    "fieldname": "organisms_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Organism Test Result"
   },
   {
    "fieldname": "sb_sensitivity",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Sensitivity Test Result"
   },
   {
    "fieldname": "sensitivity_test_items",
    "fieldtype": "Table",
+   "label": "Sensitivity Test Result",
    "options": "Sensitivity Test Result",
    "print_hide": 1,
    "report_hide": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "sb_comments",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Comments"
   },
   {
    "fieldname": "lab_test_comment",
@@ -525,13 +531,15 @@
   {
    "fieldname": "descriptive_test_items",
    "fieldtype": "Table",
+   "label": "Descriptive Test Result",
    "options": "Descriptive Test Result",
    "print_hide": 1,
    "report_hide": 1
   },
   {
    "fieldname": "sb_descriptive",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Descriptive Test Result"
   },
   {
    "default": "0",
@@ -544,13 +552,14 @@
   {
    "fieldname": "organism_test_items",
    "fieldtype": "Table",
+   "label": "Organism Test Result",
    "options": "Organism Test Result",
    "print_hide": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-07-16 13:35:24.811062",
+ "modified": "2020-11-30 11:04:17.195848",
  "modified_by": "Administrator",
  "module": "Healthcare",
  "name": "Lab Test",

@@ -25,7 +25,6 @@ class Quotation(SellingController):
 	def validate(self):
 		super(Quotation, self).validate()
 		self.set_status()
-		self.update_opportunity()
 		self.validate_uom_is_integer("stock_uom", "qty")
 		self.validate_valid_till()
 		self.set_customer_name()
@@ -50,25 +49,24 @@ class Quotation(SellingController):
 			lead_name, company_name = frappe.db.get_value("Lead", self.party_name, ["lead_name", "company_name"])
 			self.customer_name = company_name or lead_name
 
-	def update_opportunity(self):
+	def update_opportunity(self, status):
 		for opportunity in list(set([d.prevdoc_docname for d in self.get("items")])):
 			if opportunity:
-				self.update_opportunity_status(opportunity)
+				self.update_opportunity_status(status, opportunity)
 
 		if self.opportunity:
-			self.update_opportunity_status()
+			self.update_opportunity_status(status)
 
-	def update_opportunity_status(self, opportunity=None):
+	def update_opportunity_status(self, status, opportunity=None):
 		if not opportunity:
 			opportunity = self.opportunity
 
 		opp = frappe.get_doc("Opportunity", opportunity)
-		opp.status = None
-		opp.set_status(update=True)
+		opp.set_status(status=status, update=True)
 
 	def declare_enquiry_lost(self, lost_reasons_list, detailed_reason=None):
 		if not self.has_sales_order():
-			get_lost_reasons = frappe.get_list('Opportunity Lost Reason',
+			get_lost_reasons = frappe.get_list('Quotation Lost Reason',
 			fields = ["name"])
 			lost_reasons_lst = [reason.get('name') for reason in get_lost_reasons]
 			frappe.db.set(self, 'status', 'Lost')
@@ -82,7 +80,7 @@ class Quotation(SellingController):
 				else:
 					frappe.throw(_("Invalid lost reason {0}, please create a new lost reason").format(frappe.bold(reason.get('lost_reason'))))
 
-			self.update_opportunity()
+			self.update_opportunity('Lost')
 			self.update_lead()
 			self.save()
 
@@ -95,7 +93,7 @@ class Quotation(SellingController):
 			self.company, self.base_grand_total, self)
 
 		#update enquiry status
-		self.update_opportunity()
+		self.update_opportunity('Quotation')
 		self.update_lead()
 
 	def on_cancel(self):
@@ -105,7 +103,7 @@ class Quotation(SellingController):
 
 		#update enquiry status
 		self.set_status(update=True)
-		self.update_opportunity()
+		self.update_opportunity('Open')
 		self.update_lead()
 
 	def print_other_charges(self,docname):
@@ -285,9 +283,17 @@ def _make_customer(source_name, ignore_permissions=False):
 						return customer
 					else:
 						raise
-				except frappe.MandatoryError:
+				except frappe.MandatoryError as e:
+					mandatory_fields = e.args[0].split(':')[1].split(',')
+					mandatory_fields = [customer.meta.get_label(field.strip()) for field in mandatory_fields]
+
 					frappe.local.message_log = []
-					frappe.throw(_("Please create Customer from Lead {0}").format(lead_name))
+					lead_link = frappe.utils.get_link_to_form("Lead", lead_name)
+					message = _("Could not auto create Customer due to the following missing mandatory field(s):") + "<br>"
+					message += "<br><ul><li>" + "</li><li>".join(mandatory_fields) + "</li></ul>"
+					message += _("Please create Customer from Lead {0}.").format(lead_link)
+
+					frappe.throw(message, title=_("Mandatory Missing"))
 			else:
 				return customer_name
 		else:

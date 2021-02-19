@@ -42,16 +42,6 @@ erpnext.selling.SellingController = erpnext.TransactionController.extend({
 		me.frm.set_query('customer_address', erpnext.queries.address_query);
 		me.frm.set_query('shipping_address_name', erpnext.queries.address_query);
 
-		if(this.frm.fields_dict.taxes_and_charges) {
-			this.frm.set_query("taxes_and_charges", function() {
-				return {
-					filters: [
-						['Sales Taxes and Charges Template', 'company', '=', me.frm.doc.company],
-						['Sales Taxes and Charges Template', 'docstatus', '!=', 2]
-					]
-				}
-			});
-		}
 
 		if(this.frm.fields_dict.selling_price_list) {
 			this.frm.set_query("selling_price_list", function() {
@@ -409,6 +399,10 @@ erpnext.selling.SellingController = erpnext.TransactionController.extend({
 			}
 	},
 
+	batch_no: function(doc, cdt, cdn) {
+		this._super(doc, cdt, cdn);
+	},
+
 	qty: function(doc, cdt, cdn) {
 		this._super(doc, cdt, cdn);
 
@@ -479,7 +473,7 @@ frappe.ui.form.on(cur_frm.doctype,"project", function(frm) {
 						$.each(frm.doc["items"] || [], function(i, row) {
 							if(r.message) {
 								frappe.model.set_value(row.doctype, row.name, "cost_center", r.message);
-								frappe.msgprint(__("Cost Center For Item with Item Code '"+row.item_name+"' has been Changed to "+ r.message));
+								frappe.msgprint(__("Cost Center For Item with Item Code {0} has been Changed to {1}", [row.item_name, r.message]));
 							}
 						})
 					}
@@ -494,13 +488,18 @@ frappe.ui.form.on(cur_frm.doctype, {
 		var dialog = new frappe.ui.Dialog({
 			title: __("Set as Lost"),
 			fields: [
-				{"fieldtype": "Table MultiSelect",
-				"label": __("Lost Reasons"),
-				"fieldname": "lost_reason",
-				"options": "Lost Reason Detail",
-				"reqd": 1},
-
-				{"fieldtype": "Text", "label": __("Detailed Reason"), "fieldname": "detailed_reason"},
+				{
+					"fieldtype": "Table MultiSelect",
+					"label": __("Lost Reasons"),
+					"fieldname": "lost_reason",
+					"options": frm.doctype === 'Opportunity' ? 'Opportunity Lost Reason Detail': 'Quotation Lost Reason Detail',
+					"reqd": 1
+				},
+				{
+					"fieldtype": "Text",
+					"label": __("Detailed Reason"),
+					"fieldname": "detailed_reason"
+				},
 			],
 			primary_action: function() {
 				var values = dialog.get_values();
