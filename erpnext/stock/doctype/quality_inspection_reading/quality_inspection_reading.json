@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "specification",
+  "parameter_group",
   "status",
   "value",
   "numeric",
@@ -210,15 +211,23 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Numeric"
+  },
+  {
+   "fetch_from": "specification.parameter_group",
+   "fieldname": "parameter_group",
+   "fieldtype": "Link",
+   "label": "Parameter Group",
+   "options": "Quality Inspection Parameter Group",
+   "read_only": 1
   }
  ],
  "idx": 1,
  "istable": 1,
  "links": [],
+<<<<<<< HEAD
  "modified": "2021-02-01 19:46:22.138018",
- "modified_by": "Administrator",
+=======
  "module": "Stock",
- "name": "Quality Inspection Reading",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",

@@ -40,7 +40,8 @@ class LeaveApplication(Document):
 	def on_update(self):
 		if self.status == "Open" and self.docstatus < 1:
 			# notify leave approver about creation
-			self.notify_leave_approver()
+			if frappe.db.get_single_value("HR Settings", "send_leave_notification"):
+				self.notify_leave_approver()
 
 	def on_submit(self):
 		if self.status == "Open":
@@ -50,7 +51,8 @@ class LeaveApplication(Document):
 		self.update_attendance()
 
 		# notify leave applier about approval
-		self.notify_employee()
+		if frappe.db.get_single_value("HR Settings", "send_leave_notification"):
+			self.notify_employee()
 		self.create_leave_ledger_entry()
 		self.reload()
 
@@ -60,7 +62,8 @@ class LeaveApplication(Document):
 	def on_cancel(self):
 		self.create_leave_ledger_entry(submit=False)
 		# notify leave applier about cancellation
-		self.notify_employee()
+		if frappe.db.get_single_value("HR Settings", "send_leave_notification"):
+			self.notify_employee()
 		self.cancel_attendance()
 
 	def validate_applicable_after(self):
@@ -245,7 +248,7 @@ class LeaveApplication(Document):
 	def throw_overlap_error(self, d):
 		msg = _("Employee {0} has already applied for {1} between {2} and {3} : ").format(self.employee,
 			d['leave_type'], formatdate(d['from_date']), formatdate(d['to_date'])) \
-			+ """ <b><a href="#Form/Leave Application/{0}">{0}</a></b>""".format(d["name"])
+			+ """ <b><a href="/app/Form/Leave Application/{0}">{0}</a></b>""".format(d["name"])
 		frappe.throw(msg, OverlapError)
 
 	def get_total_leaves_on_half_day(self):

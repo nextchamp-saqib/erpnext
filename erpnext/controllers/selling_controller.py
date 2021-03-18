@@ -16,16 +16,6 @@ from erpnext.controllers.stock_controller import StockController
 from erpnext.controllers.sales_and_purchase_return import get_rate_for_return
 
 class SellingController(StockController):
-	def __setup__(self):
-		if hasattr(self, "taxes"):
-			self.flags.print_taxes_with_zero_amount = cint(frappe.db.get_single_value("Print Settings",
-				"print_taxes_with_zero_amount"))
-			self.flags.show_inclusive_tax_in_print = self.is_inclusive_tax()
-
-			self.print_templates = {
-				"total": "templates/print_formats/includes/total.html",
-				"taxes": "templates/print_formats/includes/taxes.html"
-			}
 
 	def get_feed(self):
 		return _("To {0} | {1} {2}").format(self.customer_name, self.currency,
@@ -151,6 +141,11 @@ class SellingController(StockController):
 			sales_person.allocated_amount = flt(
 				self.base_net_total * sales_person.allocated_percentage / 100.0,
 				self.precision("allocated_amount", sales_person))
+
+			if sales_person.commission_rate:
+				sales_person.incentives = flt(
+					sales_person.allocated_amount * flt(sales_person.commission_rate) / 100.0,
+					self.precision("incentives", sales_person))
 
 			total += sales_person.allocated_percentage
 
@@ -456,9 +451,13 @@ class SellingController(StockController):
 		check_list, chk_dupl_itm = [], []
 		if cint(frappe.db.get_single_value("Selling Settings", "allow_multiple_items")):
 			return
+		if self.doctype == "Sales Invoice" and self.is_consolidated:
+			return
+		if self.doctype == "POS Invoice":
+			return
 
 		for d in self.get('items'):
-			if self.doctype in ["POS Invoice","Sales Invoice"]:
+			if self.doctype == "Sales Invoice":
 				stock_items = [d.item_code, d.description, d.warehouse, d.sales_order or d.delivery_note, d.batch_no or '']
 				non_stock_items = [d.item_code, d.description, d.sales_order or d.delivery_note]
 			elif self.doctype == "Delivery Note":
@@ -469,13 +468,19 @@ class SellingController(StockController):
 				non_stock_items = [d.item_code, d.description]
 
 			if frappe.db.get_value("Item", d.item_code, "is_stock_item") == 1:
+				duplicate_items_msg = _("Item {0} entered multiple times.").format(frappe.bold(d.item_code))
+				duplicate_items_msg += "<br><br>"
+				duplicate_items_msg += _("Please enable {} in {} to allow same item in multiple rows").format(
+					frappe.bold("Allow Item to Be Added Multiple Times in a Transaction"),
+					get_link_to_form("Selling Settings", "Selling Settings")
+				)
 				if stock_items in check_list:
-					frappe.throw(_("Note: Item {0} entered multiple times").format(d.item_code))
+					frappe.throw(duplicate_items_msg)
 				else:
 					check_list.append(stock_items)
 			else:
 				if non_stock_items in chk_dupl_itm:
-					frappe.throw(_("Note: Item {0} entered multiple times").format(d.item_code))
+					frappe.throw(duplicate_items_msg)
 				else:
 					chk_dupl_itm.append(non_stock_items)
 
