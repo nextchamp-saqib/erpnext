@@ -226,6 +226,7 @@
  "links": [],
  "modified": "2021-02-01 19:46:22.138018",
  "module": "Stock",
+ "name": "Quality Inspection Reading",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",
