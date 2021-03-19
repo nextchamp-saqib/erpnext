@@ -275,10 +275,7 @@ class update_entries_after(object):
 			return entries_to_fix
 		elif dependant_sle.item_code == self.item_code and dependant_sle.warehouse in self.data:
 			return entries_to_fix
-<<<<<<< HEAD
 
-=======
->>>>>>> 78e576ee6abc2ca38dcb152689cfc94390aeb3f2
 		self.initialize_previous_data(dependant_sle)
 
 		args = self.data[dependant_sle.warehouse].previous_sle \
