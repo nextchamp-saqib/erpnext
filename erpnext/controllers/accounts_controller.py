@@ -25,7 +25,8 @@ from erpnext.stock.doctype.packed_item.packed_item import make_packing_list
 
 class AccountMissingError(frappe.ValidationError): pass
 
-force_item_fields = ("item_group", "brand", "stock_uom", "is_fixed_asset", "item_tax_rate", "pricing_rules")
+force_item_fields = ("item_group", "brand", "stock_uom", "is_fixed_asset", "item_tax_rate",
+	"pricing_rules", "weight_per_unit", "weight_uom", "total_weight")
 
 class AccountsController(TransactionBase):
 	def __init__(self, *args, **kwargs):
@@ -302,6 +303,7 @@ class AccountsController(TransactionBase):
 					args["doctype"] = self.doctype
 					args["name"] = self.name
 					args["child_docname"] = item.name
+					args["ignore_pricing_rule"] = self.ignore_pricing_rule if hasattr(self, 'ignore_pricing_rule') else 0
 
 					if not args.get("transaction_date"):
 						args["transaction_date"] = args.get("posting_date")
@@ -1503,6 +1505,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 	parent.flags.ignore_validate_update_after_submit = True
 	parent.set_qty_as_per_stock_uom()
 	parent.calculate_taxes_and_totals()
+	parent.set_total_in_words()
 	if parent_doctype == "Sales Order":
 		make_packing_list(parent)
 		parent.set_gross_profit()

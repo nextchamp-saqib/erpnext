@@ -20,11 +20,13 @@ from frappe.utils.data import cstr, cint, format_date, flt, time_diff_in_seconds
 
 def validate_einvoice_fields(doc):
 	einvoicing_enabled = cint(frappe.db.get_value('E Invoice Settings', 'E Invoice Settings', 'enable'))
-	invalid_doctype = doc.doctype not in ['Sales Invoice']
+	invalid_doctype = doc.doctype != 'Sales Invoice'
 	invalid_supply_type = doc.get('gst_category') not in ['Registered Regular', 'SEZ', 'Overseas', 'Deemed Export']
 	company_transaction = doc.get('billing_address_gstin') == doc.get('company_gstin')
-
-	if not einvoicing_enabled or invalid_doctype or invalid_supply_type or company_transaction: return
+	no_taxes_applied = not doc.get('taxes')
+	
+	if not einvoicing_enabled or invalid_doctype or invalid_supply_type or company_transaction or no_taxes_applied:
+		return
 
 	if doc.docstatus == 0 and doc._action == 'save':
 		if doc.irn:
@@ -35,7 +37,7 @@ def validate_einvoice_fields(doc):
 	elif doc.docstatus == 1 and doc._action == 'submit' and not doc.irn:
 		frappe.throw(_('You must generate IRN before submitting the document.'), title=_('Missing IRN'))
 
-	elif doc.docstatus == 2 and doc._action == 'cancel' and not doc.irn_cancelled:
+	elif doc.irn and doc.docstatus == 2 and doc._action == 'cancel' and not doc.irn_cancelled:
 		frappe.throw(_('You must cancel IRN before cancelling the document.'), title=_('Cancel Not Allowed'))
 
 def raise_document_name_too_long_error():
@@ -84,10 +86,10 @@ def get_doc_details(invoice):
 		invoice_date=invoice_date
 	))
 
-def get_party_details(address_name):
+def get_party_details(address_name, company_address=None, billing_address=None, shipping_address=None):
 	d = frappe.get_all('Address', filters={'name': address_name}, fields=['*'])[0]
 
-	if (not d.gstin
+	if ((not d.gstin and not shipping_address)
 		or not d.city
 		or not d.pincode
 		or not d.address_title
@@ -105,13 +107,17 @@ def get_party_details(address_name):
 		# according to einvoice standard
 		pincode = 999999
 
-	return frappe._dict(dict(
-		gstin=d.gstin, legal_name=d.address_title,
+	party_address_details = frappe._dict(dict(
+		legal_name=d.address_title,
 		location=d.city, pincode=d.pincode,
 		state_code=d.gst_state_number,
 		address_line1=d.address_line1,
 		address_line2=d.address_line2
 	))
+	if d.gstin:
+		party_address_details.gstin = d.gstin
+
+	return party_address_details
 
 def get_gstin_details(gstin):
 	if not hasattr(frappe.local, 'gstin_cache'):
@@ -158,10 +164,10 @@ def get_item_list(invoice):
 		item.update(d.as_dict())
 
 		item.sr_no = d.idx
-		item.description = d.item_name.replace('"', '\\"')
+		item.description = json.dumps(d.item_name)[1:-1]
 
 		item.qty = abs(item.qty)
-		item.discount_amount = abs(item.discount_amount * item.qty)
+		item.discount_amount = 0
 		item.unit_rate = abs(item.base_net_amount / item.qty)
 		item.gross_amount = abs(item.base_net_amount)
 		item.taxable_value = abs(item.base_net_amount)
@@ -221,11 +227,12 @@ def get_invoice_value_details(invoice):
 
 	if invoice.apply_discount_on == 'Net Total' and invoice.discount_amount:
 		invoice_value_details.base_total = abs(invoice.base_total)
+		invoice_value_details.invoice_discount_amt = invoice.base_discount_amount
 	else:
 		invoice_value_details.base_total = abs(invoice.base_net_total)
+		# since tax already considers discount amount
+		invoice_value_details.invoice_discount_amt = 0
 
-	# since tax already considers discount amount
-	invoice_value_details.invoice_discount_amt = 0 # invoice.base_discount_amount
 	invoice_value_details.round_off = invoice.base_rounding_adjustment
 	invoice_value_details.base_grand_total = abs(invoice.base_rounded_total) or abs(invoice.base_grand_total)
 	invoice_value_details.grand_total = abs(invoice.rounded_total) or abs(invoice.grand_total)
@@ -302,7 +309,7 @@ def validate_mandatory_fields(invoice):
 			_('GSTIN is mandatory to fetch company GSTIN details. Please enter GSTIN in selected company address.'),
 			title=_('Missing Fields')
 		)
-	if not frappe.db.get_value('Address', invoice.customer_address, 'gstin'):
+	if invoice.gst_category != 'Overseas' and not frappe.db.get_value('Address', invoice.customer_address, 'gstin'):
 		frappe.throw(
 			_('GSTIN is mandatory to fetch customer GSTIN details. Please enter GSTIN in selected customer address.'),
 			title=_('Missing Fields')
@@ -317,14 +324,18 @@ def make_einvoice(invoice):
 	item_list = get_item_list(invoice)
 	doc_details = get_doc_details(invoice)
 	invoice_value_details = get_invoice_value_details(invoice)
-	seller_details = get_party_details(invoice.company_address)
+	seller_details = get_party_details(invoice.company_address, company_address=1)
 
 	if invoice.gst_category == 'Overseas':
 		buyer_details = get_overseas_address_details(invoice.customer_address)
 	else:
-		buyer_details = get_party_details(invoice.customer_address)
-		place_of_supply = get_place_of_supply(invoice, invoice.doctype) or invoice.billing_address_gstin
-		place_of_supply = place_of_supply[:2]
+		buyer_details = get_party_details(invoice.customer_address, billing_address=1)
+		place_of_supply = get_place_of_supply(invoice, invoice.doctype)
+		if place_of_supply:
+			place_of_supply = place_of_supply.split('-')[0]
+		else:
+			place_of_supply = invoice.billing_address_gstin[:2]
+
 		buyer_details.update(dict(place_of_supply=place_of_supply))
 
 	shipping_details = payment_details = prev_doc_details = eway_bill_details = frappe._dict({})
@@ -332,7 +343,7 @@ def make_einvoice(invoice):
 		if invoice.gst_category == 'Overseas':
 			shipping_details = get_overseas_address_details(invoice.shipping_address_name)
 		else:
-			shipping_details = get_party_details(invoice.shipping_address_name)
+			shipping_details = get_party_details(invoice.shipping_address_name, shipping_address=1)
 
 	if invoice.is_pos and invoice.base_paid_amount:
 		payment_details = get_payment_details(invoice)
@@ -340,7 +351,7 @@ def make_einvoice(invoice):
 	if invoice.is_return and invoice.return_against:
 		prev_doc_details = get_return_doc_reference(invoice)
 
-	if invoice.transporter:
+	if invoice.transporter and cint(invoice.distance):
 		eway_bill_details = get_eway_bill_details(invoice)
 
 	# not yet implemented
@@ -368,7 +379,10 @@ def make_einvoice(invoice):
 
 	return einvoice
 
-def validate_einvoice(validations, einvoice, errors=[]):
+def validate_einvoice(validations, einvoice, errors=None):
+	if errors is None:
+		errors = []
+
 	for fieldname, field_validation in validations.items():
 		value = einvoice.get(fieldname, None)
 		if not value or value == "None":
@@ -414,7 +428,7 @@ def validate_einvoice(validations, einvoice, errors=[]):
 			errors.append(_('{} should not exceed {} characters').format(label, max_length))
 		if value_type == 'number' and (value > maximum or value < minimum):
 			errors.append(_('{} {} should be between {} and {}').format(label, value, minimum, maximum))
-		if pattern_str and not pattern.match(value):
+		if pattern_str and not pattern.match(value) and field_validation.get('validationMsg'):
 			errors.append(field_validation.get('validationMsg'))
 
 	return errors
@@ -443,13 +457,20 @@ class GSPConnector():
 	def get_credentials(self):
 		if self.invoice:
 			gstin = self.get_seller_gstin()
-			credentials = next(d for d in self.e_invoice_settings.credentials if d.gstin == gstin)
+			if not self.e_invoice_settings.enable:
+				frappe.throw(_("E-Invoicing is disabled. Please enable it from {} to generate e-invoices.").format(get_link_to_form("E Invoice Settings", "E Invoice Settings")))
+
+			credentials_for_gstin = [d for d in self.e_invoice_settings.credentials if d.gstin == gstin]
+			if credentials_for_gstin:
+				credentials = credentials_for_gstin[0]
+			else:
+				frappe.throw(_('Cannot find e-invoicing credentials for GSTIN {}. Please check E-Invoice Settings').format(gstin))
 		else:
 			credentials = self.e_invoice_settings.credentials[0] if self.e_invoice_settings.credentials else None
 		return credentials
 
 	def get_seller_gstin(self):
-		gstin = self.invoice.company_gstin or frappe.db.get_value('Address', self.invoice.company_address, 'gstin')
+		gstin = frappe.db.get_value('Address', self.invoice.company_address, 'gstin')
 		if not gstin:
 			frappe.throw(_('Cannot retrieve Company GSTIN. Please select company address with valid GSTIN.'))
 		return gstin
