@@ -36,11 +36,19 @@
   "column_break_27",
   "is_day_book_data_processed",
   "is_day_book_data_imported",
-  "import_log_section",
-  "failed_import_log",
-  "fixed_errors_log",
-  "failed_import_preview",
-  "fixed_error_log_preview"
+  "default_warehouse",
+  "column_break_21",
+  "trial_balance_report",
+  "default_cost_center",
+  "error_log_section",
+  "hide_resolved_errors",
+  "error_log_html",
+  "chart_of_accounts",
+  "masters",
+  "vouchers",
+  "is_chart_of_accounts_imported",
+  "is_opening_balances_imported",
+  "error_log"
  ],
  "fields": [
   {
@@ -215,7 +223,38 @@
    "fieldtype": "Link",
    "label": "Default UOM",
    "options": "UOM",
-   "read_only_depends_on": "eval:doc.is_master_data_imported==1"
+   "read_only_depends_on": "eval:doc.is_master_data_processed==1"
+  },
+  {
+   "description": "Data will be imported to this Company",
+   "fieldname": "erpnext_company",
+   "fieldtype": "Link",
+   "label": "ERPNext Company",
+   "options": "Company",
+   "read_only_depends_on": "eval:doc.is_master_data_processed==1",
+   "reqd": 1
+  },
+  {
+   "fieldname": "chart_of_accounts",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "masters",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_chart_of_accounts_imported",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "default": "[]",
@@ -245,16 +284,18 @@
    "fieldname": "fixed_errors_log",
    "fieldtype": "Code",
    "hidden": 1,
-   "options": "JSON"
+   "read_only": 1
   },
   {
-   "fieldname": "fixed_error_log_preview",
-   "fieldtype": "HTML",
-   "label": "Fixed Error Log"
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:!doc.is_master_data_imported",
+   "fieldname": "master_data_section",
+   "fieldtype": "Section Break",
+   "label": "Master Data Import"
   }
  ],
  "links": [],
- "modified": "2020-04-28 00:29:18.039826",
+ "modified": "2021-01-20 15:39:40.536652",
  "modified_by": "Administrator",
  "module": "ERPNext Integrations",
  "name": "Tally Migration",

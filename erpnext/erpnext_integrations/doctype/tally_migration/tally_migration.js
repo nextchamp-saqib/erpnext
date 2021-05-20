@@ -71,38 +71,61 @@ frappe.ui.form.on("Tally Migration", {
 				}
 			}
 		}
-	},
 
-	erpnext_company: function (frm) {
-		frappe.db.exists("Company", frm.doc.erpnext_company).then(exists => {
-			if (exists) {
-				frappe.msgprint(
-					__("Company {0} already exists. Continuing will overwrite the Company and Chart of Accounts", [frm.doc.erpnext_company]),
+		if (frm.doc.is_master_data_processed || frm.doc.is_day_book_data_processed) {
+			const method = '/api/method/erpnext.erpnext_integrations.doctype.tally_migration.tally_migration.export_to_csv';
+
+			const exportables = frm.doc.is_day_book_data_processed ? 
+				["Opening Entry", "Journal Entry", "Sales Invoice", "Purchase Invoice"] :
+				["UOM", "Item Group", "Item", "Customer", "Supplier", "Address"];
+
+			for (doctype of exportables) {
+				frm.add_custom_button(
+					doctype,
+					() => open_url_post(method, {
+						docname: frm.doc.name,
+						to_export: doctype
+					}),
+					"Export"
 				);
 			}
-		});
+		}
 	},
 
-	add_button: function (frm, label, method) {
+	add_button: function (frm, label, method, args, group) {
 		frm.add_custom_button(
 			label,
 			() => {
 				frm.call({
 					doc: frm.doc,
 					method: method,
+					args: args,
 					freeze: true
 				});
 				frm.reload_doc();
-			}
+			},
+			group
 		);
 	},
 
-	render_html_table(frm, shown_logs, hidden_logs, field) {
-		if (shown_logs && shown_logs.length > 0) {
-			frm.toggle_display(field, true);
-		} else {
-			frm.toggle_display(field, false);
-			return
+	show_after_import_message(frm) {
+		if (frm.dashboard.progress_area.is(":visible")) return;
+
+		const error_log = JSON.parse(frm.doc.error_log);
+		const unresolved_errors = error_log.find(e => e.status == 'Failed');
+		if (unresolved_errors) {
+			frappe.msgprint({
+				message: __("You had errors while migrating data. Please resolve them manually to continue."),
+				indicator: "orange",
+				title: __("Partial Success")
+			});
+		} else if (frm.percentage < 0) {
+			const error_log_link = `<a href='desk#List/Error%20Log/List?method=Tally%20Migration%20Error'>Error Log</a>`
+			frappe.msgprint({
+				message: __("You had errors while processing / importing data. Please check {0} for more information.", [error_log_link]),
+				indicator: "orange",
+				title: __("Partial Success")
+			});
 		}
 		let rows = erpnext.tally_migration.get_html_rows(shown_logs, field);
 		let rows_head, table_caption;
