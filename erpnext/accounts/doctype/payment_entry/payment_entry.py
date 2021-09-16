@@ -502,13 +502,15 @@ class PaymentEntry(AccountsController):
 
 	def validate_received_amount(self):
 		if self.paid_from_account_currency == self.paid_to_account_currency:
-			if self.paid_amount != self.received_amount:
-				frappe.throw(_("Received Amount cannot be greater than Paid Amount"))
+			total_deductions = sum(flt(d.amount) for d in self.get("deductions"))
+			if self.paid_amount - total_deductions != self.received_amount:
+				frappe.throw(_("Received Amount should be equal to Paid Amount - Total Deductions"))
 
 	def set_received_amount(self):
 		self.base_received_amount = self.base_paid_amount
+		total_deductions = sum(flt(d.amount) for d in self.get("deductions"))
 		if self.paid_from_account_currency == self.paid_to_account_currency:
-			self.received_amount = self.paid_amount
+			self.received_amount = self.paid_amount - total_deductions
 
 	def set_amounts_after_tax(self):
 		applicable_tax = 0
