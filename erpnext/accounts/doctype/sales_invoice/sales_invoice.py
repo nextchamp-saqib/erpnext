@@ -430,11 +430,7 @@ class SalesInvoice(SellingController):
 	def set_missing_values(self, for_validate=False):
 		pos = self.set_pos_fields(for_validate)
 
-		if not self.debit_to:
-			self.debit_to = get_party_account("Customer", self.customer, self.company)
-			self.party_account_currency = frappe.db.get_value("Account", self.debit_to, "account_currency", cache=True)
-		if not self.due_date and self.customer:
-			self.due_date = get_due_date(self.posting_date, "Customer", self.customer, self.company)
+		self.set_debit_to()
 
 		super(SalesInvoice, self).set_missing_values(for_validate)
 
@@ -450,6 +446,13 @@ class SalesInvoice(SellingController):
 				"campaign": pos.get("campaign"),
 				"allow_print_before_pay": pos.get("allow_print_before_pay")
 			}
+
+	def set_debit_to(self):
+		if not self.debit_to:
+			self.debit_to = get_party_account("Customer", self.customer, self.company)
+			self.party_account_currency = frappe.db.get_value("Account", self.debit_to, "account_currency", cache=True)
+		if not self.due_date and self.customer:
+			self.due_date = get_due_date(self.posting_date, "Customer", self.customer, self.company)
 
 	def update_time_sheet(self, sales_invoice):
 		for d in self.timesheets:
@@ -507,7 +510,7 @@ class SalesInvoice(SellingController):
 
 		pos = {}
 		if self.pos_profile:
-			pos = frappe.get_doc('POS Profile', self.pos_profile)
+			pos = frappe.get_cached_doc('POS Profile', self.pos_profile)
 
 		if not self.get('payments') and not for_validate:
 			update_multi_mode_option(self, pos)
@@ -627,6 +630,17 @@ class SalesInvoice(SellingController):
 				["Sales Order", "sales_order", "so_detail"],
 				["Delivery Note", "delivery_note", "dn_detail"]
 			])
+
+	def set_item_tax_template(self):
+		from erpnext.stock.get_item_details import get_item_tax_map, get_item_tax_template
+		for item in self.get('items'):
+			details = {}
+			item_doc = frappe.get_cached_doc("Item", item.item_code)
+			get_item_tax_template(self.as_dict(), item_doc, details)
+			details["item_tax_rate"] = get_item_tax_map(self.company, details.get("item_tax_template"), as_json=True)
+
+			item.item_tax_template = details.get('item_tax_template')
+			item.item_tax_rate = details.get('item_tax_rate')
 
 	def set_against_income_account(self):
 		"""Set against account for debit to account"""
