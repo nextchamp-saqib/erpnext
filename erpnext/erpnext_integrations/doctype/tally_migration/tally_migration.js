@@ -15,7 +15,7 @@ frappe.ui.form.on("Tally Migration", {
 			frm.set_query(account, () => ({ filters: {company: frm.doc.erpnext_company, is_group: 0} }));
 		});
 
-		frm.set_query("default_round_off_account", () => { 
+		frm.set_query("default_round_off_account", () => {
 			return {
 				filters: {
 					company: frm.doc.erpnext_company,
@@ -57,7 +57,7 @@ frappe.ui.form.on("Tally Migration", {
 		frm.page.hide_icon_group();
 		frm.page.show_menu();
 		frm.trigger("render_error_log_table");
-		
+
 		const error_log = JSON.parse(frm.doc.error_log);
 		const unresolved_errors = error_log.find(e => e.status == 'Failed');
 
@@ -143,7 +143,7 @@ frappe.ui.form.on("Tally Migration", {
 				if (frm.doc.hide_resolved_errors && !in_list(unresolved_errors, idx)) return ``;
 
 				const skip_document = `
-					<button 
+					<button
 						class="btn btn-default btn-xs" onclick="erpnext.tally_migration.skip_document(${idx})">
 						Skip Document
 					</button>`;
@@ -158,8 +158,8 @@ frappe.ui.form.on("Tally Migration", {
 						Mark as Created
 					</button>`;
 				const indicator_color = err.status == 'Failed' ? 'red' : err.status == 'Pending' ? 'orange' : 'green';
-				const actions = err.status == 'Failed' ? 
-					`${skip_document} ${create_document}` : 
+				const actions = err.status == 'Failed' ?
+					`${skip_document} ${create_document}` :
 					err.status == 'Pending' ? `${skip_document} ${mark_as_created} <br> ${create_document}` : ``;
 
 				return `

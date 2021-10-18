@@ -12,20 +12,18 @@ import traceback
 import zipfile
 from decimal import Decimal
 
-from bs4 import BeautifulSoup as bs
-
 import frappe
-from erpnext import encode_company_abbr
-from erpnext.accounts.doctype.account.chart_of_accounts.chart_of_accounts import create_charts
-from erpnext.accounts.doctype.chart_of_accounts_importer.chart_of_accounts_importer import unset_existing_data
-
+from bs4 import BeautifulSoup as bs
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_field
 from frappe.model.document import Document
-from frappe.model.naming import getseries, revert_series_if_last
-from frappe.utils.data import format_datetime, cint, flt
-from frappe.utils import cstr
-from frappe.utils.csvutils import to_csv
+from frappe.utils.data import cint, flt, format_datetime
+
+from erpnext import encode_company_abbr
+from erpnext.accounts.doctype.account.chart_of_accounts.chart_of_accounts import create_charts
+from erpnext.accounts.doctype.chart_of_accounts_importer.chart_of_accounts_importer import (
+	unset_existing_data,
+)
 
 PRIMARY_ACCOUNT = "Primary"
 CHUNK_SIZE = 500
@@ -52,7 +50,7 @@ class TallyMigration(Document):
 	def autoname(self):
 		if not self.name:
 			self.name = "Tally Migration on " + format_datetime(self.creation)
-	
+
 	def fetch_xml(self, data_file):
 		def sanitize(string):
 			return re.sub("&#4;", "", string)
@@ -97,7 +95,7 @@ class TallyMigration(Document):
 		except frappe.DuplicateEntryError:
 			pass
 		return f.name
-	
+
 	def fetch_processed_data(self, filename):
 		file = frappe.get_doc("File", filename)
 		content = file.get_content()
@@ -193,7 +191,7 @@ class TallyMigration(Document):
 						if pincode in pincodes:
 							return city, state
 				return "", ""
-			
+
 			def get_party_doc(party_type, party, account):
 				if party_type == "Customer":
 					return {
@@ -244,7 +242,7 @@ class TallyMigration(Document):
 				party, party_type, links = None, None, []
 				try:
 					party = account.NAME.string.strip()
-				except:
+				except Exception:
 					self.log(account)
 					continue
 
@@ -337,14 +335,14 @@ class TallyMigration(Document):
 
 			self.publish(_("Done"), 4, 4)
 
-		except:
+		except Exception:
 			self.publish(_("Process Failed"), -1, 4)
 			frappe.db.rollback()
 			self.log()
 
 		finally:
 			self.set_status()
-	
+
 	def import_coa(self):
 		coa = self.fetch_processed_data(self.chart_of_accounts)
 		company = frappe.get_doc("Company", self.erpnext_company)
@@ -366,14 +364,14 @@ class TallyMigration(Document):
 			masters = self.fetch_processed_data(self.masters)
 			self.enqueue_import(masters)
 
-		except:
+		except Exception:
 			self.publish(_("Process Failed"), -1, 100)
 			frappe.db.rollback()
 			self.log()
 
 		finally:
 			self.set_status()
-	
+
 	def after_master_data_import(self):
 		self.default_cost_center, self.default_round_off_account = frappe.db.get_value("Company", self.erpnext_company, ["cost_center", "round_off_account"])
 		self.default_warehouse = frappe.db.get_value("Stock Settings", "Stock Settings", "default_warehouse")
@@ -388,7 +386,7 @@ class TallyMigration(Document):
 		for idx, ledger in enumerate(ledgers):
 			if ledger.string.strip() == 'Opening Stock':
 				continue
-			
+
 			account_name = encode_company_abbr(ledger.string.strip(), self.erpnext_company)
 			cr_amount = Decimal(credit_amounts[idx].get_text().strip() or 0)
 			dr_amount = Decimal(debit_amounts[idx].get_text().strip() or 0)
@@ -417,7 +415,7 @@ class TallyMigration(Document):
 			"accounts": jv_accounts,
 		}
 		return journal_entry
-	
+
 	def voucher_to_journal_entry(self, voucher):
 		accounts = []
 		ledger_entries = voucher.find_all("ALLLEDGERENTRIES.LIST") + voucher.find_all("LEDGERENTRIES.LIST")
@@ -433,7 +431,7 @@ class TallyMigration(Document):
 					account["party_type"] = party_type
 					account["account"] = party_account
 					account["party"] = entry.LEDGERNAME.string.strip()
-			
+
 			amount = entry.AMOUNT.string.strip()
 			if '@' in amount:
 				# eg. "-JPY363953.00 @ ₹ 0.6931/JPY = -₹ 252255.82"
@@ -443,7 +441,7 @@ class TallyMigration(Document):
 			cr_or_dr = "debit_in_account_currency" if amount < 0 else "credit_in_account_currency"
 			account[cr_or_dr] = str(abs(amount))
 			accounts.append(account)
-		
+
 		if not accounts:
 			return {}
 
@@ -562,7 +560,7 @@ class TallyMigration(Document):
 					vouchers.append(processed_voucher)
 				else:
 					invalid_vouchers.append(voucher)
-			except:
+			except Exception:
 				self.log(voucher)
 				raise
 
@@ -595,14 +593,14 @@ class TallyMigration(Document):
 
 			self.publish(_("Done"), 5, 5)
 
-		except:
+		except Exception:
 			self.publish(_("Process Failed"), -1, 5)
 			frappe.db.rollback()
 			self.log()
 
 		finally:
 			self.set_status()
-	
+
 	def adjust_difference_with_temporary_opening(self, jv):
 		total_debit = sum([Decimal(d["debit_in_account_currency"]) for d in jv.get("accounts")])
 		total_credit = sum([Decimal(d["credit_in_account_currency"]) for d in jv.get("accounts")])
@@ -632,7 +630,7 @@ class TallyMigration(Document):
 			jv.get('accounts').append(row)
 
 		return jv
-	
+
 	def import_opening_balances(self, entry):
 		try:
 			entry = self.adjust_difference_with_temporary_opening(entry)
@@ -640,7 +638,7 @@ class TallyMigration(Document):
 			jv.insert()
 			jv.submit()
 			self.update_field("is_opening_balances_imported", 1)
-		except:
+		except Exception:
 			frappe.db.rollback()
 			self.log(entry)
 			raise
@@ -739,14 +737,14 @@ class TallyMigration(Document):
 
 			self.enqueue_import(vouchers[1:])
 
-		except:
+		except Exception:
 			self.publish(_("Process Failed"), -1, 100)
 			frappe.db.rollback()
 			self.log()
 
 		finally:
 			self.set_status()
-	
+
 	def enqueue_import(self, payload):
 		total = len(payload)
 		is_last = False
@@ -760,13 +758,13 @@ class TallyMigration(Document):
 				queue="long", timeout=3600, data=payload,
 				start=index+1, is_last=is_last
 			)
-	
+
 	def get_dependencies(self, doctype):
 		return {
 			"Item": set(("UOM", "Item Group")),
 			"Address": set(("Customer", "Supplier"))
 		}.get(doctype, set())
-	
+
 	def start_import(self, data, start, is_last):
 		frappe.flags.in_migrate = True
 		chunk = data[start: start + CHUNK_SIZE]
@@ -787,7 +785,7 @@ class TallyMigration(Document):
 					skipped_docs.append(doc)
 					self.publish(_("Skipping {}").format(doctype), i + 1, progress_total)
 					continue
-				
+
 				self.publish(_("Importing {}").format(doctype), i + 1, progress_total)
 
 				flags = doc.pop("flags") if doc.get("flags") else {}
@@ -840,7 +838,7 @@ class TallyMigration(Document):
 				self.after_day_book_data_import()
 			else:
 				self.publish(_("Resolve Errors and Try Again"), -1, 1)
-	
+
 	def publish(self, message, progress, total):
 		frappe.publish_realtime("tally_migration_progress_update", {
 			"title": "Tally Migration",
@@ -849,13 +847,13 @@ class TallyMigration(Document):
 			"user": frappe.session.user,
 			"message": message
 		})
-	
+
 	def set_status(self, status=""):
 		self.update_field("status", status)
 
 	def update_field(self, field, value):
 		self.db_set(field, value, update_modified=False, commit=True)
-	
+
 	def after_day_book_data_import(self):
 		self.status = ""
 		self.is_day_book_data_imported = 1
