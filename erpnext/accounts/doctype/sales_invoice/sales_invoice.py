@@ -65,7 +65,9 @@ class SalesInvoice(SellingController):
 			'percent_join_field': 'sales_order',
 			'status_field': 'billing_status',
 			'keyword': 'Billed',
-			'overflow_type': 'billing'
+			'overflow_type': 'billing',
+			'extra_cond': """ and parent not in (select name from `tabSales Invoice`
+				where `tabSales Invoice Item`.parent=name and is_return=1 and update_billed_amount_in_sales_order=0)"""
 		}]
 
 	def set_indicator(self):
