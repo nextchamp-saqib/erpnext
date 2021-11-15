@@ -12,7 +12,8 @@
 	"js/erpnext-web.min.js": [
 		"public/js/website_utils.js",
 		"public/js/shopping_cart.js",
-		"public/js/wishlist.js"
+		"public/js/wishlist.js",
+		"public/js/projects/project_tree.js"
 	],
 	"css/erpnext-web.css": [
 		"public/scss/website.scss",
@@ -47,7 +48,8 @@
 		"public/js/utils/dimension_tree_filter.js",
 		"public/js/telephony.js",
 		"public/js/templates/call_link.html",
-		"public/js/templates/node_card.html"
+		"public/js/templates/node_card.html",
+		"public/js/projects/project_tree.js"
 	],
 	"js/item-dashboard.min.js": [
 		"stock/dashboard/item_dashboard.html",
