@@ -6,6 +6,8 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 		super(opts);
 		this.show();
 		window.cur_list = this;
+		this.hide_sort_selector = true;
+		this.view_name = 'List';
 	}
 
 	setup_defaults() {
@@ -891,7 +893,7 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 
 	get_open_button(doc) {
 		return `
-				<div class="level-item hidden-xs" style="margin-left: 5px;">
+				<div class="level-item hidden-xs mr-3">
 					<button class="btn btn-open btn-default btn-xs"
 						data-doctype="${escape(doc.doctype)}" data-name="${escape(doc.name)}">
 						${__("Open")}
@@ -902,7 +904,7 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 
 	get_add_child_button(doc) {
 		return `
-				<div class="level-item hidden-xs">
+				<div class="level-item hidden-xs mr-3">
 					<button class="btn create-new btn-default btn-xs"
 						data-name="${escape(doc.name)}" data-project="${escape(doc.project)}">
 						${__("Add Child")}
