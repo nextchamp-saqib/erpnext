@@ -394,10 +394,10 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 	}
 
 	setup_task_tree_dropdown() {
-		this.$result.on('click', '.btn-action', (e) => {
+		this.$result.on('click', 'svg.icon', (e) => {
 			let el = e.currentTarget;
 			let $el = $(el);
-			$el.find(".octicon").removeClass("octicon-chevron-right").addClass("octicon-chevron-down");
+			$el.find("use.mb-1").attr("href", "#icon-down");
 
 			let target = unescape(el.getAttribute("data-name"));
 			this.render_task(target, $el);
@@ -409,7 +409,7 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 		if (!$row || (!$row.length)) return;
 
 		if (!$el) {
-			$el = $row.find(".octicon").removeClass("octicon-chevron-right").addClass("octicon-chevron-down");
+			$el = $row.find("use.mb-1").attr("href", "#icon-down");
 		}
 
 		let list = $row.find(`.nested-list-row-container`);
@@ -421,7 +421,7 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 
 		if ($list[0].classList.contains("hide")) {
 			$list.find(`.nested-result`).remove();
-			$el.find(".octicon").removeClass("octicon-chevron-down").addClass("octicon-chevron-right");
+			$el.find("use.mb-1").attr("href", "#icon-right");
 		}
 
 		frappe.call(this.get_task_call_args([["Task", "parent_task", "=", task]])).then(r => {
@@ -513,7 +513,7 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 
 	setup_expand_all_rows() {
 		this.$result.on('click', '.expand-all', () => {
-			let task_list = this.$result.find(".octicon-chevron-right").parent();
+			let task_list = this.$result.find("use[href='#icon-right']").parent();
 			this.toggle_expand_collapse_button('expand');
 
 			if (!task_list) return
@@ -528,7 +528,7 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 
 	setup_collapse_all_rows() {
 		this.$result.on('click', '.collapse-all', () => {
-			let task_list = this.$result.find(".octicon-chevron-down").parent();
+			let task_list = this.$result.find("use[href='#icon-down']").parent();
 			this.toggle_expand_collapse_button('collapse');
 
 			if (!task_list) return
@@ -541,7 +541,7 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 
 				if ($list.length && $list[0].classList.contains("hide")) {
 					$list.find(`.nested-result`).remove();
-					$row.find(".octicon").removeClass("octicon-chevron-down").addClass("octicon-chevron-right");
+					$row.find("use.mb-1").attr("href", "#icon-right")
 				}
 			});
 
@@ -769,30 +769,15 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 
 		const subject_link = this.get_subject_link(doc, subject, escaped_subject);
 
-		let html = doc.doctype == 'Task' && doc.expandable ? `<a class="btn btn-action btn-xs"
-			data-doctype="Task" data-name="${escape(doc.name)}" style="width: 20px;">
-				<i class="octicon octicon-chevron-right" />
-			</a>` : ``;
+		// let html = doc.doctype == 'Task' && doc.expandable ? `<a class="btn btn-action btn-xs"
+		// 	data-doctype="Task" data-name="${escape(doc.name)}" style="width: 20px;">
+		// 		<i class="octicon octicon-chevron-right" />
+		// 	</a>` : ``;
 
-
-		// let subject_html = `
-		// 	<input class="level-item list-row-checkbox hidden-xs" type="checkbox" data-name="${escape(doc.name)}">
-		// 	<span class="level-item" style="margin-bottom: 1px;">
-		// 		<i class="octicon octicon-heart like-action ${heart_class}"
-		// 			data-name="${doc.name}" data-doctype="${doc.doctype}"
-		// 			data-liked-by="${encodeURI(doc._liked_by) || '[]'}">
-		// 		</i>
-		// 		<span class="likes-count">
-		// 			${ liked_by.length > 99 ? __("99") + '+' : __(liked_by.length || '')}
-		// 		</span>
-		// 	</span>
-		// 	<span class="level-item ${seen} ellipsis" title="${escaped_subject}" style="padding-left: ${20*level}px;">
-		// 		<span class="level-item" style="margin-bottom: 1px;"">
-		// 			${html}
-		// 		</span>
-		// 		${subject_link}
-		// 	</span>
-		// `;
+		let html = doc.doctype == 'Task' && doc.expandable ? `<svg class="icon icon-sm" style=""
+			data-doctype="Task" data-name="${escape(doc.name)}">
+				<use class="mb-1" href="#icon-right"></use>
+			</svg>` : ``;
 
 		let subject_html = `
 			<span class="level-item select-like">
@@ -980,8 +965,10 @@ erpnext.projects.ProjectTree = class Projects extends frappe.views.BaseList {
 	get_previous_header_html() {
 		return `
 			<header class="level list-row list-row-head text-muted small">
-				<a class="btn btn-prev btn-xs">
-					<i class="octicon octicon-chevron-left" />
+				<a class="btn btn-prev btn-xs" style="margin-left: 15px;">
+					<svg class="icon  icon-sm" style="">
+						<use class="mb-1" href="#icon-left"></use>
+					</svg>
 					<span style="margin-left: 5px">Projects</span>
 				</a>
 				<button class="btn btn-xs expand-all btn-default" style="float: right">
