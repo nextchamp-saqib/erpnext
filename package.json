@@ -1,5 +1,7 @@
 {
   "name": "erpnext",
+  "private": true,
+  "workspaces": ["projects", "frappe-ui"],
   "description": "Open Source ERP System powered by the Frappe Framework",
   "repository": {
     "type": "git",
