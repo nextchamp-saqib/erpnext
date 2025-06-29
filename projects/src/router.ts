@@ -4,8 +4,8 @@ import session from './session'
 const routes = [
 	{
 		path: '/',
-		name: 'Home',
-		component: () => import('@/pages/Home.vue'),
+		name: 'ProjectsList',
+		component: () => import('@/pages/ProjectsList.vue'),
 	},
 ]
 

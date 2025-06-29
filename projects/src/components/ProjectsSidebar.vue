@@ -5,7 +5,8 @@
 <script setup lang="ts">
 import { Sidebar } from 'frappe-ui'
 import session from '../session'
-import { reactive } from 'vue'
+import { computed, reactive } from 'vue'
+import { useRoute } from 'vue-router'
 
 import LucideLogout from '~icons/lucide/log-out'
 import LucideHelpCircle from '~icons/lucide/help-circle'
@@ -15,9 +16,12 @@ import LucideSearch from '~icons/lucide/search'
 import LucideHourglass from '~icons/lucide/hourglass'
 import LucideListTodo from '~icons/lucide/list-todo'
 
+const route = useRoute()
+const appName = 'Plainbase'
+
 const sidebarConfig = reactive({
 	header: {
-		title: 'Projects',
+		title: appName,
 		subtitle: session.user.full_name,
 		menuItems: [
 			{
@@ -54,7 +58,8 @@ const sidebarConfig = reactive({
 				{
 					label: 'Projects',
 					icon: LucideFolder,
-					to: '/projects',
+					to: '/',
+					isActive: computed(() => route.path === '/'),
 				},
 				{
 					label: 'Tasks',
