@@ -2,7 +2,7 @@
 	<div class="flex h-screen w-screen overflow-hidden bg-white text-base antialiased">
 		<ProjectsSidebar />
 		<div class="flex flex-col flex-1">
-			<div class="flex h-12 items-center justify-between border-b py-2.5 px-5">
+			<div class="flex h-12 items-center justify-between border-b px-4">
 				<Breadcrumbs :items="breadcrumbs" />
 			</div>
 			<div class="flex-1 overflow-y-auto">
