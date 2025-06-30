@@ -13,36 +13,18 @@
 </template>
 
 <script setup lang="ts">
-import { FormControl, useCall } from 'frappe-ui'
+import { FormControl } from 'frappe-ui'
 import { computed } from 'vue'
+import { Meta } from './types'
+import { dataFields, hasPerm, isValueType } from './utils'
 
-const props = defineProps<{ doctype: string }>()
-
-type Meta = {
-	title_field: string
-	fields: {
-		options: any
-		label: string
-		fieldname: string
-		fieldtype: string
-		in_standard_filter: boolean
-		permlevel: number
-	}[]
-}
-
-const meta = useCall<Meta>({
-	url: `/api/v2/doctype/${props.doctype}/meta`,
-	method: 'GET',
-})
+const props = defineProps<{ meta: Meta }>()
 
 const quickFilters = computed(() => {
-	if (!meta.data) return []
-
-	const _meta = meta.data as Meta
-	const fields = _meta.fields
+	const fields = props.meta.fields
 
 	const quickFilterFields = fields.filter((df) => {
-		const isTitleField = df.fieldname === _meta.title_field
+		const isTitleField = df.fieldname === props.meta.title_field
 		const isValidStandardFilter = df.in_standard_filter && isValueType(df.fieldtype)
 		const hasPermLevelAccess = hasPerm(df.permlevel)
 
@@ -75,30 +57,4 @@ const quickFilters = computed(() => {
 
 	return quickFilters
 })
-
-const dataFields = [
-	'Text',
-	'Small Text',
-	'Text Editor',
-	'HTML Editor',
-	'Data',
-	'Code',
-	'Phone',
-	'JSON',
-	'Read Only',
-]
-
-function isValueType(fieldtype: string) {
-	return (
-		['Data', 'Text', 'Small Text', 'Long Text', 'Code', 'Password'].includes(fieldtype) ||
-		fieldtype.startsWith('Select') ||
-		fieldtype === 'Link' ||
-		fieldtype === 'Dynamic Link' ||
-		fieldtype === 'Read Only'
-	)
-}
-
-function hasPerm(permlevel: number) {
-	return true
-}
 </script>

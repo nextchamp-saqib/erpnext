@@ -4,17 +4,18 @@
 
 <script setup lang="ts">
 import { Sidebar } from 'frappe-ui'
-import session from '../session'
 import { computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
+import session from '../session'
 
-import LucideLogout from '~icons/lucide/log-out'
-import LucideHelpCircle from '~icons/lucide/help-circle'
 import LucideBell from '~icons/lucide/bell'
 import LucideFolder from '~icons/lucide/folder-open-dot'
-import LucideSearch from '~icons/lucide/search'
+import LucideHelpCircle from '~icons/lucide/help-circle'
 import LucideHourglass from '~icons/lucide/hourglass'
 import LucideListTodo from '~icons/lucide/list-todo'
+import LucideLogout from '~icons/lucide/log-out'
+import LucideMoon from '~icons/lucide/moon'
+import LucideSearch from '~icons/lucide/search'
 
 const route = useRoute()
 const appName = 'Plainbase'
@@ -24,6 +25,16 @@ const sidebarConfig = reactive({
 		title: appName,
 		subtitle: session.user.full_name,
 		menuItems: [
+			{
+				label: 'Toggle Theme',
+				icon: LucideMoon,
+				onClick: () => {
+					const currentTheme = document.documentElement.getAttribute('data-theme')
+					let theme = currentTheme === 'dark' ? 'light' : 'dark'
+					document.documentElement.setAttribute('data-theme', theme)
+					localStorage.setItem('theme', theme)
+				},
+			},
 			{
 				label: 'Help',
 				icon: LucideHelpCircle,
