@@ -1,5 +1,5 @@
 <template>
-	<div class="flex items-center text-base text-ink-gray-7">
+	<div class="flex items-center text-base">
 		<!-- Status Badge -->
 		<Badge v-if="isStatusField" :theme="'gray'" :size="'lg'" :variant="'subtle'">
 			{{ props.value }}
