@@ -1,3 +1,4 @@
+import { usePageMeta } from 'frappe-ui'
 import { createRouter, createWebHistory } from 'vue-router'
 import session from './session'
 
@@ -29,6 +30,9 @@ router.beforeEach(async (to, _, next) => {
 		window.location.href = '/login?redirect-to=/projects'
 		return next(false)
 	}
+
+	usePageMeta(() => ({ title: to.name }))
+
 	return next()
 })
 
