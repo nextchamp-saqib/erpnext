@@ -110,24 +110,7 @@ const isStatusField = computed(() => {
 	return (
 		props.field.fieldname === 'status' ||
 		props.field.fieldname === 'workflow_state' ||
-		props.field.fieldname === 'docstatus' ||
-		(props.field.fieldtype === 'Check' &&
-			[
-				'enabled',
-				'disabled',
-				'active',
-				'inactive',
-				'published',
-				'archived',
-				'draft',
-				'pending',
-				'open',
-				'approved',
-				'completed',
-				'closed',
-				'cancelled',
-				'rejected',
-			].includes(props.field.fieldname))
+		props.field.fieldname === 'docstatus'
 	)
 })
 
