@@ -199,13 +199,6 @@ const parsedAssignments = computed(() => {
 	}
 })
 
-const getNumericClass = () => {
-	const num = Number(props.value)
-	if (num > 0) return 'text-green-600'
-	if (num < 0) return 'text-red-600'
-	return 'text-gray-600'
-}
-
 const formatDate = (value: any) => {
 	if (!value) return ''
 	if (props.field.fieldname === 'creation' || props.field.fieldname === 'modified') {
@@ -227,11 +220,6 @@ const formatCurrency = (value: any) => {
 		style: 'currency',
 		currency: 'USD',
 	}).format(Number(value))
-}
-
-const formatPercent = (value: any) => {
-	if (value === null || value === undefined) return ''
-	return `${Number(value)}%`
 }
 
 const truncateText = (text: any) => {
