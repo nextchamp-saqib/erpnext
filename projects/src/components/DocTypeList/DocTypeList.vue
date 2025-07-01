@@ -1,52 +1,58 @@
 <template>
-	<div v-if="!list.loading" class="flex flex-col h-full w-full overflow-hidden p-4">
-		<!-- List Header -->
-		<div class="flex justify-between gap-4">
-			<QuickFilters v-if="list.meta" :meta="list.meta" />
-
-			<!-- Filter -->
-			<div class="flex gap-2">
-				<Button label="Filter">
-					<template #prefix>
-						<LucideListFilter class="size-4 text-ink-gray-6" />
-					</template>
-				</Button>
-				<Button label="Sort">
-					<template #prefix>
-						<LucideArrowUpDown class="size-4 text-ink-gray-6" />
-					</template>
-				</Button>
-				<Button>
-					<template #icon>
-						<LucideMoreVertical class="size-4 text-ink-gray-6" />
-					</template>
-				</Button>
-			</div>
+	<div class="flex flex-col h-full w-full overflow-hidden">
+		<div class="flex h-12 items-center flex-shrink-0 justify-between border-b px-4">
+			<Breadcrumbs :items="breadcrumbs" />
 		</div>
+		<div v-if="!list.loading" class="flex flex-col flex-1 h-full w-full overflow-hidden p-4">
+			<!-- List Header -->
+			<div class="flex justify-between gap-4">
+				<QuickFilters v-if="list.meta" :meta="list.meta" />
 
-		<ListView
-			class="mt-4"
-			:id="`${list.doctype}-list`"
-			:columns="list.columns"
-			:rows="list.data"
-			rowKey="name"
-			:options="list.options"
-		>
-			<template #cell="{ column, row, item: value }">
-				<DocTypeListRowCell :field="column" :value="value" />
-			</template>
-		</ListView>
+				<!-- Filter -->
+				<div class="flex gap-2">
+					<Button label="Filter">
+						<template #prefix>
+							<LucideListFilter class="size-4 text-ink-gray-6" />
+						</template>
+					</Button>
+					<Button label="Sort">
+						<template #prefix>
+							<LucideArrowUpDown class="size-4 text-ink-gray-6" />
+						</template>
+					</Button>
+					<Button>
+						<template #icon>
+							<LucideMoreVertical class="size-4 text-ink-gray-6" />
+						</template>
+					</Button>
+				</div>
+			</div>
+
+			<ListView
+				class="mt-4"
+				:id="`${list.doctype}-list`"
+				:columns="list.columns"
+				:rows="list.data"
+				rowKey="name"
+				:options="list.options"
+			>
+				<template #cell="{ column, row, item: value }">
+					<DocTypeListRowCell :field="column" :value="value" />
+				</template>
+			</ListView>
+		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { useTimeAgo } from '@vueuse/core'
-import { ListView, useCall, useList } from 'frappe-ui'
+import { Breadcrumbs, ListView, useCall, useList } from 'frappe-ui'
 import { reactive } from 'vue'
+import { useRoute } from 'vue-router'
 import DocTypeListRowCell from './DocTypeListRowCell.vue'
 import QuickFilters from './QuickFilters.vue'
 import { Meta } from './types'
-import { hasPerm, isValueType } from './utils'
+import { hasPerm, isValueType, pluralize } from './utils'
 
 const props = defineProps<{ doctype: string }>()
 
@@ -72,8 +78,8 @@ const list = reactive({
 		showTooltip: false,
 		resizeColumn: true,
 		emptyState: {
-			title: 'You have no projects',
-			description: 'Create a new project to get started.',
+			title: `No ${props.doctype.toLowerCase()} created yet`,
+			description: `Create a new ${props.doctype.toLowerCase()} to get started.`,
 			button: {
 				label: 'Create',
 				variant: 'solid',
@@ -82,6 +88,14 @@ const list = reactive({
 		},
 	},
 })
+
+const route = useRoute()
+const breadcrumbs = [
+	{
+		label: pluralize(props.doctype),
+		to: route.path,
+	},
+]
 
 useCall<Meta>({
 	method: 'GET',

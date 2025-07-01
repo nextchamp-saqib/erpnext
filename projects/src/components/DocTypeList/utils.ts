@@ -30,3 +30,10 @@ export function isValueType(fieldtype: string) {
 export function hasPerm(permlevel?: number) {
 	return true
 }
+
+export function pluralize(str: string) {
+	if (str.endsWith('s')) {
+		return str
+	}
+	return str + 's'
+}
