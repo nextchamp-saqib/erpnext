@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col h-full w-full overflow-hidden p-4">
+	<div v-if="!list.loading" class="flex flex-col h-full w-full overflow-hidden p-4">
 		<!-- List Header -->
 		<div class="flex justify-between gap-4">
 			<QuickFilters v-if="list.meta" :meta="list.meta" />
@@ -51,6 +51,7 @@ import { hasPerm, isValueType } from './utils'
 const props = defineProps<{ doctype: string }>()
 
 const list = reactive({
+	loading: true,
 	doctype: props.doctype,
 	meta: null as Meta | null,
 	permittedFields: [] as Meta['fields'],
@@ -63,6 +64,7 @@ const list = reactive({
 			fields: list.listFields.map((df) => df.fieldname as any),
 			onSuccess: (data) => {
 				list.data = data
+				list.loading = false
 			},
 		})
 	},

@@ -7,6 +7,16 @@ const routes = [
 		name: 'ProjectsList',
 		component: () => import('@/pages/ProjectsList.vue'),
 	},
+	{
+		path: '/tasks',
+		name: 'TasksList',
+		component: () => import('@/pages/TasksList.vue'),
+	},
+	{
+		path: '/timesheets',
+		name: 'TimesheetsList',
+		component: () => import('@/pages/TimesheetsList.vue'),
+	},
 ]
 
 let router = createRouter({
