@@ -3,10 +3,13 @@
 		<div class="flex h-12 items-center flex-shrink-0 justify-between border-b px-4">
 			<Breadcrumbs :items="breadcrumbs" />
 		</div>
-		<div v-if="!list.loading" class="flex flex-col flex-1 h-full w-full overflow-hidden p-4">
+		<div
+			v-if="!list.meta.loading"
+			class="flex flex-col flex-1 h-full w-full overflow-hidden p-4"
+		>
 			<!-- List Header -->
 			<div class="flex justify-between gap-4">
-				<QuickFilters v-if="list.meta" :meta="list.meta" />
+				<QuickFilters :fields="list.quickFilterFields" />
 
 				<!-- Filter -->
 				<div class="flex gap-2">
@@ -31,13 +34,13 @@
 			<ListView
 				class="mt-4"
 				:id="`${list.doctype}-list`"
-				:columns="list.columns"
-				:rows="list.data"
-				rowKey="name"
-				:options="list.options"
+				:columns="list.props.columns"
+				:rows="list.props.rows"
+				:rowKey="list.props.rowKey"
+				:options="list.props.options"
 			>
 				<template #cell="{ column, row, item: value }">
-					<DocTypeListRowCell :field="column" :value="value" />
+					<DocTypeListCell :field="column" :value="value" />
 				</template>
 			</ListView>
 		</div>
@@ -45,49 +48,14 @@
 </template>
 
 <script setup lang="ts">
-import { useTimeAgo } from '@vueuse/core'
-import { Breadcrumbs, ListView, useCall, useList } from 'frappe-ui'
-import { reactive } from 'vue'
+import { Breadcrumbs, ListView } from 'frappe-ui'
 import { useRoute } from 'vue-router'
-import DocTypeListRowCell from './DocTypeListRowCell.vue'
+import DocTypeListCell from './DocTypeListCell.vue'
 import QuickFilters from './QuickFilters.vue'
-import { Meta } from './types'
-import { hasPerm, isValueType, pluralize } from './utils'
+import { useDocTypeList } from './useDocTypeList'
+import { pluralize } from './utils'
 
 const props = defineProps<{ doctype: string }>()
-
-const list = reactive({
-	loading: true,
-	doctype: props.doctype,
-	meta: null as Meta | null,
-	permittedFields: [] as Meta['fields'],
-	listFields: [] as Meta['fields'],
-	columns: [] as (Meta['fields'][number] & { key: string })[],
-	data: [] as any[],
-	loadData() {
-		useList({
-			doctype: props.doctype,
-			fields: list.listFields.map((df) => df.fieldname as any),
-			onSuccess: (data) => {
-				list.data = data
-				list.loading = false
-			},
-		})
-	},
-	options: {
-		showTooltip: false,
-		resizeColumn: true,
-		emptyState: {
-			title: `No ${props.doctype.toLowerCase()} created yet`,
-			description: `Create a new ${props.doctype.toLowerCase()} to get started.`,
-			button: {
-				label: 'Create',
-				variant: 'solid',
-				onClick: () => {},
-			},
-		},
-	},
-})
 
 const route = useRoute()
 const breadcrumbs = [
@@ -97,74 +65,5 @@ const breadcrumbs = [
 	},
 ]
 
-useCall<Meta>({
-	method: 'GET',
-	url: `/api/v2/doctype/${props.doctype}/meta`,
-	onSuccess: (data) => {
-		list.meta = data
-		list.permittedFields = data.fields.filter((df) => {
-			return isValueType(df.fieldtype) && hasPerm(df.permlevel)
-		})
-		list.listFields = filterListFields(list.permittedFields)
-		list.columns = list.listFields.map((df) => {
-			return {
-				...df,
-				key: df.fieldname,
-			}
-		})
-		list.loadData()
-	},
-})
-
-function filterListFields(fields: Meta['fields']) {
-	if (!list.meta) {
-		return fields
-	}
-
-	const titleFieldName = list.meta.title_field
-	const displayFields = fields.filter((df) => {
-		if (df.fieldname === titleFieldName) {
-			return false
-		}
-		return (
-			df.in_list_view ||
-			(df.fieldtype === 'Currency' && df.options && !df.options.includes(':')) ||
-			df.fieldname === 'status'
-		)
-	})
-
-	if (titleFieldName) {
-		const titleField = fields.find((df) => df.fieldname === titleFieldName)
-		if (titleField) {
-			displayFields.unshift(titleField)
-		}
-	}
-
-	const hideNameColumn = false
-	if (!hideNameColumn && list.meta.title_field !== 'name') {
-		displayFields.push({
-			fieldname: 'name',
-			label: 'ID',
-			fieldtype: 'Data',
-		})
-	}
-
-	displayFields.push({
-		fieldname: 'modified',
-		label: 'Modified',
-		fieldtype: 'Datetime',
-	})
-
-	displayFields.push({
-		fieldname: '_assign',
-		label: 'Assigned To',
-		fieldtype: 'Data',
-	})
-
-	return displayFields
-}
-
-function getTimeAgo(date: string) {
-	return useTimeAgo(date).value
-}
+const list = useDocTypeList(props.doctype)
 </script>

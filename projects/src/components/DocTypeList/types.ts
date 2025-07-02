@@ -1,13 +1,24 @@
+import { FIELD_TYPES } from "./constants"
 
-export type Meta = {
+export type FieldType = typeof FIELD_TYPES[number]
+
+export interface DocField {
+	fieldname: string
+	fieldtype: FieldType
+	label: string
+	options?: string | string[]
+	in_list_view?: boolean
+	in_standard_filter?: boolean
+	permlevel?: number
+}
+
+export interface Meta {
 	title_field: string
-	fields: {
-		in_list_view?: boolean
-		options?: any
-		label: string
-		fieldname: string
-		fieldtype: string
-		in_standard_filter?: boolean
-		permlevel?: number
-	}[]
+	fields: DocField[]
+}
+
+export interface LinkOption {
+	label: string
+	value: string
+	description?: string
 }

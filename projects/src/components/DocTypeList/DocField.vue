@@ -16,7 +16,7 @@
 	<Link
 		v-else-if="props.fieldtype === 'Link'"
 		v-model="modelValue"
-		:doctype="props.options"
+		:doctype="props.options!"
 		:placeholder="props.label"
 	/>
 	<component
@@ -31,13 +31,15 @@
 
 <script setup lang="ts">
 import { DatePicker, DateTimePicker, FormControl } from 'frappe-ui'
+import { FieldType } from './types'
+import Link from './Link.vue'
 
-const modelValue = defineModel()
+const modelValue = defineModel<string>()
 const props = defineProps<{
 	fieldname: string
-	fieldtype: string
+	fieldtype: FieldType
 	label: string
-	options?: string | string[]
+	options?: string
 }>()
 
 const parseSelectOptions = (options: string | string[]) => {

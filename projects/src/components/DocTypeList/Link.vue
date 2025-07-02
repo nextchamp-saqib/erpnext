@@ -62,6 +62,7 @@
 import { watchDebounced } from '@vueuse/core'
 import { Autocomplete, useCall } from 'frappe-ui'
 import { computed, ref } from 'vue'
+import { LinkOption } from './types'
 
 type LinkProps = {
 	doctype: string
@@ -72,25 +73,17 @@ type LinkProps = {
 	hideMe?: boolean
 }
 
-const modelValue = defineModel()
+const modelValue = defineModel<string>()
 const props = defineProps<LinkProps>()
 
-type LinkOption = {
-	label: string
-	value: string
-	description?: string
-}
 const linkOptions = ref<LinkOption[]>([])
-
 const searchInput = ref('')
 
-const searchParams = computed(() => {
-	return {
-		txt: searchInput.value,
-		doctype: props.doctype,
-		filters: props.filters,
-	}
-})
+const searchParams = computed(() => ({
+	txt: searchInput.value,
+	doctype: props.doctype,
+	filters: props.filters,
+}))
 
 const searchCall = useCall({
 	url: '/api/method/frappe.desk.search.search_link',
