@@ -9,7 +9,19 @@
 		>
 			<!-- List Header -->
 			<div class="flex justify-between gap-4">
-				<QuickFilters :fields="list.quickFilterFields" />
+				<div class="flex gap-2">
+					<QuickFilter
+						v-for="field in list.quickFilterFields"
+						:key="field.fieldname"
+						:field="field"
+						:modelValue="list.filters[field.fieldname]"
+						@update:modelValue="
+							$event
+								? (list.filters[field.fieldname] = $event)
+								: delete list.filters[field.fieldname]
+						"
+					/>
+				</div>
 
 				<!-- Filter -->
 				<div class="flex gap-2">
@@ -51,7 +63,7 @@
 import { Breadcrumbs, ListView } from 'frappe-ui'
 import { useRoute } from 'vue-router'
 import DocTypeListCell from './DocTypeListCell.vue'
-import QuickFilters from './QuickFilters.vue'
+import QuickFilter from './QuickFilter.vue'
 import { useDocTypeList } from './useDocTypeList'
 import { pluralize } from './utils'
 

@@ -1,5 +1,7 @@
+import { watchDebounced } from '@vueuse/core'
 import { ListViewOptions, Row, useCall, useList } from 'frappe-ui'
-import { computed, reactive, ref, watch } from 'vue'
+import { Filters } from 'frappe-ui/src/data-fetching/useList/types'
+import { computed, reactive, ref } from 'vue'
 import { NO_VALUE_TYPES } from './constants'
 import { hasPerm } from './fieldUtils'
 import { Meta } from './types'
@@ -96,19 +98,33 @@ export function useDocTypeList(doctype: string) {
 		},
 	}
 
-	const listViewRows = ref<Row[]>([])
-	function loadData() {
-		const fields = headerFields.value.map((df) => df.fieldname as any)
-		useList({
+	const filters = ref<Filters>({})
+	const data = ref<Row[]>([])
+
+	const params = computed(() => {
+		return {
 			doctype,
-			fields,
-			orderBy: 'modified DESC',
-			onSuccess(data) {
-				listViewRows.value = data
-			},
-		})
-	}
-	watch(headerFields, () => loadData())
+			fields: headerFields.value.map((df) => df.fieldname as any),
+			filters: filters.value,
+			orderBy: 'modified DESC' as const,
+		}
+	})
+
+	watchDebounced(
+		params,
+		() => {
+			useList({
+				doctype: params.value.doctype,
+				fields: params.value.fields,
+				filters: params.value.filters,
+				orderBy: params.value.orderBy,
+				onSuccess(res) {
+					data.value = res
+				},
+			})
+		},
+		{ debounce: 300 },
+	)
 
 	return reactive({
 		doctype,
@@ -116,10 +132,11 @@ export function useDocTypeList(doctype: string) {
 		headerFields,
 		quickFilterFields,
 		permittedFields,
+		filters,
 		props: {
 			columns: listViewColumns,
 			rowKey: 'name',
-			rows: listViewRows,
+			rows: data,
 			options: listViewOptions,
 		},
 	})

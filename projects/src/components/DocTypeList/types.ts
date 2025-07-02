@@ -6,7 +6,7 @@ export interface DocField {
 	fieldname: string
 	fieldtype: FieldType
 	label: string
-	options?: string | string[]
+	options?: string
 	in_list_view?: boolean
 	in_standard_filter?: boolean
 	permlevel?: number

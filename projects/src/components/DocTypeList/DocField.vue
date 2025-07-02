@@ -7,9 +7,11 @@
 	/>
 	<FormControl
 		v-else-if="props.fieldtype === 'Select'"
-		class="form-control cursor-pointer [&_select]:cursor-pointer"
-		type="select"
-		v-model="modelValue"
+		type="autocomplete"
+		:modelValue="modelValue"
+		@update:modelValue="
+			modelValue = $event && typeof $event === 'object' ? $event.value : $event
+		"
 		:options="parseSelectOptions(props.options!)"
 		:placeholder="props.label"
 	/>
@@ -31,8 +33,8 @@
 
 <script setup lang="ts">
 import { DatePicker, DateTimePicker, FormControl } from 'frappe-ui'
-import { FieldType } from './types'
 import Link from './Link.vue'
+import { FieldType } from './types'
 
 const modelValue = defineModel<string>()
 const props = defineProps<{

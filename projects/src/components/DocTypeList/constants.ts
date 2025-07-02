@@ -138,3 +138,12 @@ export const RELATIVE_DATE_FIELDNAMES = ['creation', 'modified'] as readonly str
 
 export const DEFAULT_CURRENCY = 'USD'
 export const TEXT_TRUNCATE_LENGTH = 50
+
+export const DEFAULT_OPERATOR = {
+	'Data': 'like',
+	'Check': '=',
+	'Select': '=',
+	'Link': '=',
+	'Date': 'between',
+	'Datetime': 'between',
+}
