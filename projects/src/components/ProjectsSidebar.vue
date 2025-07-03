@@ -6,7 +6,7 @@
 import { Sidebar } from 'frappe-ui'
 import { computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
-import session from '../session'
+import { session } from 'frappe-ui/frappe'
 
 import LucideBell from '~icons/lucide/bell'
 import LucideFolder from '~icons/lucide/folder-open-dot'
@@ -75,12 +75,14 @@ const sidebarConfig = reactive({
 				{
 					label: 'Tasks',
 					icon: LucideListTodo,
-					to: '/tasks',
+					to: '/task',
+					isActive: computed(() => route.path.startsWith('/task')),
 				},
 				{
 					label: 'Timesheets',
 					icon: LucideHourglass,
-					to: '/timesheets',
+					to: '/timesheet',
+					isActive: computed(() => route.path.startsWith('/timesheet')),
 				},
 			],
 		},

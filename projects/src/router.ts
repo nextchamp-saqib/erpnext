@@ -1,23 +1,18 @@
 import { usePageMeta } from 'frappe-ui'
+import { session } from 'frappe-ui/frappe'
 import { createRouter, createWebHistory } from 'vue-router'
-import session from './session'
 
 const routes = [
 	{
 		path: '/',
-		name: 'ProjectsList',
-		component: () => import('@/pages/ProjectsList.vue'),
+		component: () => import('@/pages/ListView.vue'),
 	},
 	{
-		path: '/tasks',
-		name: 'TasksList',
-		component: () => import('@/pages/TasksList.vue'),
-	},
-	{
-		path: '/timesheets',
-		name: 'TimesheetsList',
-		component: () => import('@/pages/TimesheetsList.vue'),
-	},
+		props: true,
+		path: '/:doctype',
+		name: 'ListView',
+		component: () => import('@/pages/ListView.vue'),
+	}
 ]
 
 let router = createRouter({
@@ -31,7 +26,10 @@ router.beforeEach(async (to, _, next) => {
 		return next(false)
 	}
 
-	usePageMeta(() => ({ title: to.name }))
+	if (typeof to.name === 'string') {
+		const title = to.name
+		usePageMeta(() => ({ title }))
+	}
 
 	return next()
 })
