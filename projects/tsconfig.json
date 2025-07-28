@@ -17,6 +17,6 @@
 		},
 		"types": ["unplugin-icons/types/vue"]
 	},
-	"include": ["./src/**/*", "./intellisense.d.ts"],
+	"include": ["./src/**/*", "./intellisense.d.ts", "./auto-imports.d.ts", "./components.d.ts"],
 	"exclude": ["node_modules", "**/*.spec.ts"]
 }
